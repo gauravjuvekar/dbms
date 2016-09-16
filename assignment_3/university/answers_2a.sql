@@ -47,7 +47,7 @@ FROM
     course ON s.course_id = course.course_id
 GROUP BY ID;
 SELECT
-    COUNT(takes.ID)
+    COUNT(tmp_ids.ID)
 FROM
     (SELECT
         takes.ID
@@ -66,7 +66,7 @@ FROM
                 name = 'Srinivasan')) tch ON takes.course_id = tch.course_id
         AND takes.sec_id = tch.sec_id
         AND takes.semester = tch.semester
-        AND takes.year = tch.year);
+        AND takes.year = tch.year) tmp_ids;
 SELECT
     name
 FROM

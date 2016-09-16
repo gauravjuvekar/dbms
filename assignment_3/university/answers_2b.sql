@@ -52,15 +52,14 @@ SET
     salary = salary + 50000
 WHERE
     ID IN (SELECT
-
-
-            (SELECT
-            ID
+            i_ID
         FROM
             (SELECT
-                ID, COUNT(s_ID) AS n_students
+                i_ID, COUNT(s_ID) AS n_students
             FROM
-                instructor
+                advisor
+            GROUP BY i_ID) t
+        WHERE
             t.n_students >= 2);
 UPDATE course
 SET

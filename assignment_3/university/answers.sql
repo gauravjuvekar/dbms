@@ -26,6 +26,7 @@ WHERE
             ID
         FROM
             student
+		WHERE
             name = 'Tanaka');
 --  Output
 --  +-----------+-------+

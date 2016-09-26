@@ -1,0 +1,98 @@
+--  Modify the trains schema which we saw earlier  to create constraints to
+--  check the following:
+--  The value of timein is always less than or equal to timeout
+--  When a train is removed from service, all its halts should be deleted.
+--  Insert inconsistent data and verify the constraints.
+
+BEGIN TRANSACTION;
+ALTER TABLE trainhalts
+	ADD CHECK(timein <= timeout);
+ALTER TABLE trainhalts
+	ADD FOREIGN KEY (id)
+		REFERENCES train(id)
+		ON DELETE CASCADE;
+COMMIT;
+
+BEGIN TRANSACTION;
+INSERT INTO trainhalts VALUES ('KP11', 10, 'DR', '21.22', '21.21');
+--  Output
+--  ERROR:  new row for relation "trainhalts" violates check constraint
+--  "trainhalts_check"
+--  DETAIL:  Failing row contains (KP11, 10, DR, 21.22, 21.21).
+
+--  Because the error shouldnt affect further queries
+COMMIT TRANSACTION;
+BEGIN TRANSACTION;
+SELECT * FROM trainhalts;
+--    id  | seqno | stcode | timein | timeout
+--  ------+-------+--------+--------+---------
+--   KP11 |     0 | CST    |        | 20.23
+--   KP11 |     1 | BYC    | 20.31  | 20.32
+--   KP11 |     2 | DR     | 20.41  | 20.42
+--   KP11 |     3 | GPR    | 20.52  | 20.53
+--   KP11 |     4 | GPR    | 20.52  | 20.53
+--   KP11 |     5 | DR     | 20.41  | 20.42
+--   KP11 |     6 | GPR    | 20.58  | 20.59
+--   KP11 |     7 | TNA    | 21.21  | 21.22
+--   KP11 |     8 | DL     | 21.45  | 21.46
+--   KP11 |     9 | KYN    | 21.54  |
+--   A65  |     0 | CST    |        | 20.52
+--   A65  |     1 | BYC    | 21.00  | 21.01
+--   A65  |     2 | DR     | 21.10  | 21.11
+--   A65  |     3 | KRL    | 21.22  | 21.23
+--   A65  |     4 | GPR    | 21.28  | 21.29
+--   A65  |     5 | TNA    | 21.49  | 21.50
+--   A65  |     6 | DL     | 22.13  | 22.14
+--   A65  |     7 | KYN    | 22.22  | 22.23
+--   A65  |     8 | AMR    | 22.36  |
+DELETE FROM train WHERE id = 'A65';
+SELECT * FROM trainhalts;
+--    id  | seqno | stcode | timein | timeout
+--  ------+-------+--------+--------+---------
+--   KP11 |     0 | CST    |        | 20.23
+--   KP11 |     1 | BYC    | 20.31  | 20.32
+--   KP11 |     2 | DR     | 20.41  | 20.42
+--   KP11 |     3 | GPR    | 20.52  | 20.53
+--   KP11 |     4 | GPR    | 20.52  | 20.53
+--   KP11 |     5 | DR     | 20.41  | 20.42
+--   KP11 |     6 | GPR    | 20.58  | 20.59
+--   KP11 |     7 | TNA    | 21.21  | 21.22
+--   KP11 |     8 | DL     | 21.45  | 21.46
+--   KP11 |     9 | KYN    | 21.54  |
+
+--  Because we want to preserve the data
+ROLLBACK;
+
+--  ============================================================================
+--  In a new database
+--  ============================================================================
+CREATE TABLE IF NOT EXISTS person(
+	ID    INTEGER PRIMARY KEY,
+	name  TEXT,
+	email TEXT
+);
+CREATE TABLE IF NOT EXISTS remotecentre(
+	centreId INTEGER PRIMARY KEY,
+	college  TEXT,
+	town     TEXT,
+    state    TEXT
+);
+CREATE TABLE IF NOT EXISTS programme(
+	progId INTEGER PRIMARY KEY,
+	title  TEXT,
+	fromdate DATE,
+	todate   DATE
+);
+CREATE TABLE IF NOT EXISTS coordinator(
+	ID       INTEGER REFERENCES person(ID),
+	progId   INTEGER REFERENCES programme(progId),
+	centreId INTEGER REFERENCES remotecentre(centreId),
+	PRIMARY KEY (ID, progId, centreId)
+);
+CREATE TABLE IF NOT EXISTS participant(
+	ID       INTEGER REFERENCES person(ID),
+	progId   INTEGER REFERENCES programme(progId),
+	centreId INTEGER REFERENCES remotecentre(centreId),
+	PRIMARY KEY (ID, progId, centreId)
+);
+
